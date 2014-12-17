@@ -1544,7 +1544,10 @@ the specific language governing permissions and limitations under the Apache Lic
                 // that way any unselectable headers above it will also be scrolled
                 // into view
 
-                results.scrollTop(0);
+                //results.scrollTop(0);
+                // DISABLE the scrolling because a page of disabled items could lead to first selectable item
+                // not being able to be selected because it scrolls out of the view.
+                // THIS WILL BE FIXED IN SELECT2 4.0. We should switch back to the official repo when it's released.
                 return;
             }
 
