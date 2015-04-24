@@ -1785,18 +1785,21 @@ the specific language governing permissions and limitations under the Apache Lic
 
                 this.search.val(this.focusser.val());
             }
-            this.search.focus();
-            // move the cursor to the end after focussing, otherwise it will be at the beginning and
-            // new text will appear *before* focusser.val()
-            el = this.search.get(0);
-            if (el.createTextRange) {
-                range = el.createTextRange();
-                range.collapse(false);
-                range.select();
-            } else if (el.setSelectionRange) {
-                len = this.search.val().length;
-                el.setSelectionRange(len, len);
+            if(this.opts.shouldFocusInput(this)) {
+                this.search.focus();
+                // move the cursor to the end after focussing, otherwise it will be at the beginning and
+                // new text will appear *before* focusser.val()
+                el = this.search.get(0);
+                if (el.createTextRange) {
+                    range = el.createTextRange();
+                    range.collapse(false);
+                    range.select();
+                } else if (el.setSelectionRange) {
+                    len = this.search.val().length;
+                    el.setSelectionRange(len, len);
+                }    
             }
+            
 
             this.focusser.prop("disabled", true).val("");
             this.updateResults(true);
@@ -1808,7 +1811,9 @@ the specific language governing permissions and limitations under the Apache Lic
             if (!this.opened()) return;
             this.parent.close.apply(this, arguments);
             this.focusser.removeAttr("disabled");
-            this.focusser.focus();
+            if(this.opts.shouldFocusInput(this)) {
+                this.focusser.focus();
+            }
         },
 
         // single
@@ -1817,7 +1822,9 @@ the specific language governing permissions and limitations under the Apache Lic
                 this.close();
             } else {
                 this.focusser.removeAttr("disabled");
-                this.focusser.focus();
+                if(this.opts.shouldFocusInput(this)) {
+                    this.focusser.focus();
+                }
             }
         },
 
@@ -1830,7 +1837,9 @@ the specific language governing permissions and limitations under the Apache Lic
         cancel: function () {
             this.parent.cancel.apply(this, arguments);
             this.focusser.removeAttr("disabled");
-            this.focusser.focus();
+            if(this.opts.shouldFocusInput(this)) {
+                this.focusser.focus();
+            }
         },
 
         // single
@@ -1961,7 +1970,11 @@ the specific language governing permissions and limitations under the Apache Lic
                 killEvent(e);
             }));
 
-            dropdown.on("mousedown", this.bind(function() { this.search.focus(); }));
+            dropdown.on("mousedown touchstart", this.bind(function() {
+                if(this.opts.shouldFocusInput(this)) {
+                    this.search.focus();
+                }
+            }));
 
             selection.on("focus", this.bind(function(e) {
                 killEvent(e);
@@ -2162,7 +2175,7 @@ the specific language governing permissions and limitations under the Apache Lic
 
             this.close();
 
-            if (!options || !options.noFocus)
+            if ((!options || !options.noFocus) && this.opts.shouldFocusInput(this)) {
                 this.selection.focus();
 
             if (!equal(old, this.id(data))) { this.triggerChange({added:data,removed:oldData}); }
@@ -2601,7 +2614,9 @@ the specific language governing permissions and limitations under the Apache Lic
             this.focusSearch();
 
             this.updateResults(true);
-            this.search.focus();
+            if (this.opts.shouldFocusInput(this)) {
+                this.search.focus();
+            }
             this.opts.element.trigger($.Event("select2-open"));
         },
 
@@ -3108,7 +3123,24 @@ the specific language governing permissions and limitations under the Apache Lic
         blurOnChange: false,
         selectOnBlur: false,
         adaptContainerCssClass: function(c) { return c; },
-        adaptDropdownCssClass: function(c) { return null; }
+        adaptDropdownCssClass: function(c) { return null; },
+        shouldFocusInput: function (instance) {
+            // Attempt to detect touch devices
+            var supportsTouchEvents = (('ontouchstart' in window) ||
+                                       (navigator.msMaxTouchPoints > 0));
+
+            // Only devices which support touch events should be special cased
+            if (!supportsTouchEvents) {
+                return true;
+            }
+
+            // Never focus the input if search is disabled
+            if (instance.opts.minimumResultsForSearch < 0) {
+                return false;
+            }
+
+            return true;
+        }
     };
 
     $.fn.select2.ajaxDefaults = {
